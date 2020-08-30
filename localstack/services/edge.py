@@ -66,8 +66,9 @@ class ProxyListenerEdge(ProxyListener):
 
         headers['Host'] = host
 
-        # return do_forward_request_network(method, path, data, headers, port)
-        return do_forward_request_inmem(method, path, data, headers, api, port)
+        if config.FORWARD_EDGE_INMEM:
+            return do_forward_request_inmem(method, path, data, headers, api, port)
+        return do_forward_request_network(method, path, data, headers, port)
 
 
 def do_forward_request_inmem(method, path, data, headers, api, port):
@@ -83,14 +84,11 @@ def do_forward_request_inmem(method, path, data, headers, api, port):
 
 
 def do_forward_request_network(method, path, data, headers, port):
-
     connect_host = '%s:%s' % (config.HOSTNAME, port)
     url = '%s://%s%s' % (get_service_protocol(), connect_host, path)
-
     function = getattr(requests, method.lower())
     if isinstance(data, dict):
         data = json.dumps(data)
-
     response = function(url, data=data, headers=headers, verify=False, stream=True)
     return response
 
