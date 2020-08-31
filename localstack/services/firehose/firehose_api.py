@@ -217,15 +217,17 @@ def error_response(msg, code=500, error_type='InternalFailure'):
 
 @app.route('/', methods=['POST'])
 def post_request():
-    action = request.headers.get('x-amz-target')
+    action = request.headers.get('x-amz-target', '')
+    action = action.split('.')[-1]
     data = json.loads(to_str(request.data))
     response = None
-    if action == '%s.ListDeliveryStreams' % ACTION_HEADER_PREFIX:
+
+    if action == 'ListDeliveryStreams':
         response = {
             'DeliveryStreamNames': get_delivery_stream_names(),
             'HasMoreDeliveryStreams': False
         }
-    elif action == '%s.CreateDeliveryStream' % ACTION_HEADER_PREFIX:
+    elif action == 'CreateDeliveryStream':
         stream_name = data['DeliveryStreamName']
         region_name = extract_region_from_auth_header(request.headers)
         _s3_destination = data.get('S3DestinationConfiguration') or data.get('ExtendedS3DestinationConfiguration')
@@ -238,10 +240,10 @@ def post_request():
             tags=data.get('Tags'),
             region_name=region_name
         )
-    elif action == '%s.DeleteDeliveryStream' % ACTION_HEADER_PREFIX:
+    elif action == 'DeleteDeliveryStream':
         stream_name = data['DeliveryStreamName']
         response = delete_stream(stream_name)
-    elif action == '%s.DescribeDeliveryStream' % ACTION_HEADER_PREFIX:
+    elif action == 'DescribeDeliveryStream':
         stream_name = data['DeliveryStreamName']
         response = get_stream(stream_name)
         if not response:
@@ -249,14 +251,14 @@ def post_request():
         response = {
             'DeliveryStreamDescription': response
         }
-    elif action == '%s.PutRecord' % ACTION_HEADER_PREFIX:
+    elif action == 'PutRecord':
         stream_name = data['DeliveryStreamName']
         record = data['Record']
         put_record(stream_name, record)
         response = {
             'RecordId': str(uuid.uuid4())
         }
-    elif action == '%s.PutRecordBatch' % ACTION_HEADER_PREFIX:
+    elif action == 'PutRecordBatch':
         stream_name = data['DeliveryStreamName']
         records = data['Records']
         put_records(stream_name, records)
@@ -267,7 +269,7 @@ def post_request():
             'FailedPutCount': 0,
             'RequestResponses': request_responses
         }
-    elif action == '%s.UpdateDestination' % ACTION_HEADER_PREFIX:
+    elif action == 'UpdateDestination':
         stream_name = data['DeliveryStreamName']
         version_id = data['CurrentDeliveryStreamVersionId']
         destination_id = data['DestinationId']
@@ -278,7 +280,7 @@ def post_request():
         update_destination(stream_name=stream_name, destination_id=destination_id,
                            elasticsearch_update=es_update, version_id=version_id)
         response = {}
-    elif action == '%s.ListTagsForDeliveryStream' % ACTION_HEADER_PREFIX:
+    elif action == 'ListTagsForDeliveryStream':
         response = get_delivery_stream_tags(data['DeliveryStreamName'], data.get('ExclusiveStartTagKey'),
                                             data.get('Limit', 50))
     else:

@@ -252,7 +252,7 @@ def invoke_rest_api(api_id, stage, method, invocation_path, data, headers, path=
             func_arn = uri.split(':lambda:path')[1].split('functions/')[1].split('/invocations')[0]
             data_str = json.dumps(data) if isinstance(data, (dict, list)) else to_str(data)
             account_id = uri.split(':lambda:path')[1].split(':function:')[0].split(':')[-1]
-            source_ip = headers['X-Forwarded-For'].split(',')[-2]
+            source_ip = headers['X-Forwarded-For'].split(',')[-2].strip()
             integration_method = integration.get('httpMethod')
             integration_method = method if integration_method in [None, 'ANY'] else integration_method
 
